@@ -1,152 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mouse Snake Game</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-family: Arial, sans-serif;
-        }
-
-        #gameCanvas {
-            border: 2px solid black;
-            background-color: #f3f3f3;
-        }
-
-        .controls {
-            display: grid;
-            grid-template-columns: 50px 50px 50px;
-            gap: 5px;
-            margin-top: 20px;
-        }
-
-        .control-btn {
-            width: 50px;
-            height: 50px;
-            background-color: #333;
-            color: white;
-            font-size: 18px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 50%;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .control-btn:active {
-            background-color: #555;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      height: 100vh;
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      background: #111;
+      border: 1px solid #fff;
+    }
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      text-align: center;
+    }
+    .button {
+      display: inline-block;
+      margin: 5px;
+      padding: 10px 15px;
+      background: #333;
+      color: white;
+      border: 1px solid #fff;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-    <h1>Mouse Snake Game</h1>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    
-    <div class="controls">
-        <div></div>
-        <div class="control-btn" id="up">&#8593;</div>
-        <div></div>
-        <div class="control-btn" id="left">&#8592;</div>
-        <div class="control-btn" id="down">&#8595;</div>
-        <div class="control-btn" id="right">&#8594;</div>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <div id="controls">
+    <div>
+      <div class="button" onclick="changeDirection('up')">↑</div>
     </div>
+    <div>
+      <div class="button" onclick="changeDirection('left')">←</div>
+      <div class="button" onclick="changeDirection('down')">↓</div>
+      <div class="button" onclick="changeDirection('right')">→</div>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+    const box = 20;
+    let snake = [{ x: 10 * box, y: 10 * box }];
+    let food = {
+      x: Math.floor(Math.random() * (canvas.width / box)) * box,
+      y: Math.floor(Math.random() * (canvas.height / box)) * box
+    };
+    let direction = "right";
+    let score = 0;
 
-        const box = 20; // size of each grid box
-        const rows = canvas.height / box;
-        const cols = canvas.width / box;
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp" && direction !== "down") direction = "up";
+      if (e.key === "ArrowDown" && direction !== "up") direction = "down";
+      if (e.key === "ArrowLeft" && direction !== "right") direction = "left";
+      if (e.key === "ArrowRight" && direction !== "left") direction = "right";
+    });
 
-        let mouse = { x: 10, y: 10 }; // starting position of mouse
-        let snake = { x: Math.floor(Math.random() * cols), y: Math.floor(Math.random() * rows) }; // food position
-        let velocity = { x: 0, y: 0 }; // movement direction
-        let tail = []; // tail of the mouse
-        let tailLength = 0; // initial tail length
+    function changeDirection(dir) {
+      if (dir === "up" && direction !== "down") direction = "up";
+      if (dir === "down" && direction !== "up") direction = "down";
+      if (dir === "left" && direction !== "right") direction = "left";
+      if (dir === "right" && direction !== "left") direction = "right";
+    }
 
-        // Draw the game board
-        function drawBoard() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw mouse
-            ctx.fillStyle = 'gray';
-            ctx.fillRect(mouse.x * box, mouse.y * box, box, box);
+      // Draw snake
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = i === 0 ? "lime" : "green";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+      }
 
-            // Draw snake (food)
-            ctx.fillStyle = 'green';
-            ctx.fillRect(snake.x * box, snake.y * box, box, box);
+      // Draw food
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x, food.y, box, box);
 
-            // Draw tail
-            ctx.fillStyle = 'brown';
-            for (let segment of tail) {
-                ctx.fillRect(segment.x * box, segment.y * box, box, box);
-            }
+      // Snake movement
+      let head = { ...snake[0] };
+      if (direction === "up") head.y -= box;
+      if (direction === "down") head.y += box;
+      if (direction === "left") head.x -= box;
+      if (direction === "right") head.x += box;
+
+      // Check collision with walls
+      if (
+        head.x < 0 ||
+        head.x >= canvas.width ||
+        head.y < 0 ||
+        head.y >= canvas.height
+      ) {
+        alert(`Game Over! Your score: ${score}`);
+        document.location.reload();
+      }
+
+      // Check collision with self
+      for (let i = 0; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y) {
+          alert(`Game Over! Your score: ${score}`);
+          document.location.reload();
         }
+      }
 
-        // Update game state
-        function update() {
-            // Update tail
-            tail.unshift({ x: mouse.x, y: mouse.y });
-            if (tail.length > tailLength) {
-                tail.pop();
-            }
+      // Check if the snake eats the food
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        food = {
+          x: Math.floor(Math.random() * (canvas.width / box)) * box,
+          y: Math.floor(Math.random() * (canvas.height / box)) * box
+        };
+      } else {
+        snake.pop();
+      }
 
-            // Move mouse
-            mouse.x += velocity.x;
-            mouse.y += velocity.y;
+      snake.unshift(head);
 
-            // Wrap around screen
-            if (mouse.x < 0) mouse.x = cols - 1;
-            if (mouse.x >= cols) mouse.x = 0;
-            if (mouse.y < 0) mouse.y = rows - 1;
-            if (mouse.y >= rows) mouse.y = 0;
+      ctx.fillStyle = "white";
+      ctx.fillText(`Score: ${score}`, 5, canvas.height - 5);
+    }
 
-            // Check for collision with snake (food)
-            if (mouse.x === snake.x && mouse.y === snake.y) {
-                tailLength++;
-                snake.x = Math.floor(Math.random() * cols);
-                snake.y = Math.floor(Math.random() * rows);
-            }
-
-            // Check for collision with tail
-            for (let segment of tail) {
-                if (mouse.x === segment.x && mouse.y === segment.y) {
-                    resetGame();
-                }
-            }
-
-            drawBoard();
-        }
-
-        // Reset the game
-        function resetGame() {
-            mouse = { x: 10, y: 10 };
-            velocity = { x: 0, y: 0 };
-            tail = [];
-            tailLength = 0;
-            snake = { x: Math.floor(Math.random() * cols), y: Math.floor(Math.random() * rows) };
-        }
-
-        // Control the mouse with buttons
-        document.getElementById('up').addEventListener('click', () => setDirection(0, -1));
-        document.getElementById('down').addEventListener('click', () => setDirection(0, 1));
-        document.getElementById('left').addEventListener('click', () => setDirection(-1, 0));
-        document.getElementById('right').addEventListener('click', () => setDirection(1, 0));
-
-        function setDirection(x, y) {
-            if (velocity.x !== -x && velocity.y !== -y) {
-                velocity = { x, y };
-            }
-        }
-
-        // Game loop
-        setInterval(update, 200);
-    </script>
+    setInterval(draw, 100);
+  </script>
 </body>
 </html>
