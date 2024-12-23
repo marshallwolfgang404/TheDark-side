@@ -77,38 +77,33 @@
     canvas.width = 400;
     canvas.height = 400;
 
-    // Load textures
-    const snakeTexture = new Image();
-    snakeTexture.src = 'snake-texture.png'; // Replace with the actual path to your texture image
-
-    const foodTexture = new Image();
-    foodTexture.src = 'mouse-texture.png'; // Replace with the actual path to your texture image
-
     function drawBoard() {
       ctx.fillStyle = '#111';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
     function drawSnake() {
-      snake.forEach(segment => {
-        ctx.drawImage(
-          snakeTexture,
-          segment.x * cellSize,
-          segment.y * cellSize,
-          cellSize,
-          cellSize
-        );
+      ctx.fillStyle = '#fff';
+      snake.forEach((segment, index) => {
+        ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
+        if (index === 0) {
+          ctx.strokeStyle = '#fff';
+          ctx.strokeRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
+        }
       });
     }
 
     function drawFood() {
-      ctx.drawImage(
-        foodTexture,
-        food.x * cellSize,
-        food.y * cellSize,
-        cellSize,
-        cellSize
+      ctx.fillStyle = '#999';
+      ctx.beginPath();
+      ctx.arc(
+        food.x * cellSize + cellSize / 2,
+        food.y * cellSize + cellSize / 2,
+        cellSize / 3,
+        0,
+        2 * Math.PI
       );
+      ctx.fill();
     }
 
     function moveSnake() {
