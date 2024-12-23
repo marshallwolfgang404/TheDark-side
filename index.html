@@ -11,8 +11,9 @@
       color: #fff;
       font-family: Arial, sans-serif;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
       height: 100vh;
       overflow: hidden;
     }
@@ -24,17 +25,43 @@
       box-shadow: 0 0 10px #fff;
     }
 
-    h1 {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      font-size: 24px;
-      z-index: 10;
+    .controls {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(3, 60px);
+      grid-gap: 10px;
+    }
+
+    .controls button {
+      background-color: #333;
+      color: #fff;
+      border: none;
+      padding: 15px;
+      font-size: 18px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .controls button:active {
+      background-color: #555;
+    }
+
+    .empty {
+      visibility: hidden;
     }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
+
+  <div class="controls">
+    <button id="up">↑</button>
+    <button class="empty"></button>
+    <button id="down">↓</button>
+    <button id="left">←</button>
+    <button class="empty"></button>
+    <button id="right">→</button>
+  </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -50,33 +77,38 @@
     canvas.width = 400;
     canvas.height = 400;
 
+    // Load textures
+    const snakeTexture = new Image();
+    snakeTexture.src = 'snake-texture.png'; // Replace with the actual path to your texture image
+
+    const foodTexture = new Image();
+    foodTexture.src = 'mouse-texture.png'; // Replace with the actual path to your texture image
+
     function drawBoard() {
       ctx.fillStyle = '#111';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
     function drawSnake() {
-      ctx.fillStyle = '#fff';
-      snake.forEach((segment, index) => {
-        ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
-        if (index === 0) {
-          ctx.strokeStyle = '#fff';
-          ctx.strokeRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
-        }
+      snake.forEach(segment => {
+        ctx.drawImage(
+          snakeTexture,
+          segment.x * cellSize,
+          segment.y * cellSize,
+          cellSize,
+          cellSize
+        );
       });
     }
 
     function drawFood() {
-      ctx.fillStyle = '#999';
-      ctx.beginPath();
-      ctx.arc(
-        food.x * cellSize + cellSize / 2,
-        food.y * cellSize + cellSize / 2,
-        cellSize / 3,
-        0,
-        2 * Math.PI
+      ctx.drawImage(
+        foodTexture,
+        food.x * cellSize,
+        food.y * cellSize,
+        cellSize,
+        cellSize
       );
-      ctx.fill();
     }
 
     function moveSnake() {
@@ -85,7 +117,6 @@
         y: snake[0].y + direction.y
       };
 
-      // Check for collision with walls
       if (
         newHead.x < 0 ||
         newHead.x >= canvas.width / cellSize ||
@@ -96,7 +127,6 @@
         return;
       }
 
-      // Check for collision with itself
       if (snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
         resetGame();
         return;
@@ -104,7 +134,6 @@
 
       snake.unshift(newHead);
 
-      // Check for food
       if (newHead.x === food.x && newHead.y === food.y) {
         score++;
         spawnFood();
@@ -116,8 +145,6 @@
     function spawnFood() {
       food.x = Math.floor(Math.random() * (canvas.width / cellSize));
       food.y = Math.floor(Math.random() * (canvas.height / cellSize));
-
-      // Avoid spawning food on the snake
       if (snake.some(segment => segment.x === food.x && segment.y === food.y)) {
         spawnFood();
       }
@@ -138,25 +165,20 @@
       drawFood();
     }
 
-    function handleInput(event) {
-      const keyPressed = event.key;
-
-      if (keyPressed === 'ArrowUp' && lastDirection.y === 0) {
-        direction = { x: 0, y: -1 };
-      } else if (keyPressed === 'ArrowDown' && lastDirection.y === 0) {
-        direction = { x: 0, y: 1 };
-      } else if (keyPressed === 'ArrowLeft' && lastDirection.x === 0) {
-        direction = { x: -1, y: 0 };
-      } else if (keyPressed === 'ArrowRight' && lastDirection.x === 0) {
-        direction = { x: 1, y: 0 };
+    function setDirection(x, y) {
+      if ((x !== 0 && lastDirection.x === 0) || (y !== 0 && lastDirection.y === 0)) {
+        direction = { x, y };
+        lastDirection = direction;
       }
-      lastDirection = direction;
     }
 
-    // Initialize the game
+    document.getElementById('up').addEventListener('click', () => setDirection(0, -1));
+    document.getElementById('down').addEventListener('click', () => setDirection(0, 1));
+    document.getElementById('left').addEventListener('click', () => setDirection(-1, 0));
+    document.getElementById('right').addEventListener('click', () => setDirection(1, 0));
+
     resetGame();
     setInterval(gameLoop, gameSpeed);
-    window.addEventListener('keydown', handleInput);
   </script>
 </body>
 </html>
